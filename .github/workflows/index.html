@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OrganizadorPy — Ordená tus archivos con inteligencia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f1a; --surface:#17172a; --card:#1e1e35; --border:#2e2e50;
+  --purple:#7c6ff7; --purple-l:#a89ef9; --mint:#4ecca3; --mint-d:#36b389;
+  --text:#e2e2f0; --muted:#7e7e9a; --yellow:#f9c74f; --red:#f38ba8;
+  --r:12px; --r-lg:20px; --shadow:0 4px 40px rgba(124,111,247,.13);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:16px;line-height:1.6;overflow-x:hidden}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+h1{font-size:clamp(2.4rem,6vw,4rem);font-weight:700;line-height:1.1;letter-spacing:-.02em}
+h2{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.05rem;font-weight:500}
+p{color:var(--muted)}
+.container{max-width:1080px;margin:0 auto;padding:0 24px}
+a{color:inherit;text-decoration:none}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 40px;background:rgba(15,15,26,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem;color:var(--text);display:flex;align-items:center;gap:8px}
+.nav-logo em{color:var(--purple);font-style:normal}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{color:var(--muted);font-size:.88rem;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--mint);color:#0f0f1a;padding:8px 18px;border-radius:8px;font-weight:600;font-size:.88rem;transition:background .2s}
+.nav-cta:hover{background:var(--mint-d)}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 0 80px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(124,111,247,.15) 0%,transparent 70%);pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:-100px;left:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(78,204,163,.08) 0%,transparent 70%);pointer-events:none}
+.hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(124,111,247,.12);border:1px solid rgba(124,111,247,.3);color:var(--purple-l);padding:5px 14px;border-radius:99px;font-size:.8rem;font-weight:500;margin-bottom:24px}
+.hero-badge .dot{width:6px;height:6px;background:var(--mint);border-radius:50%;animation:pulse 2s infinite}
+.hero-desc{font-size:1.05rem;margin-bottom:36px;max-width:480px}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--mint);color:#0f0f1a;padding:13px 26px;border-radius:var(--r);border:none;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;transition:all .2s}
+.btn-primary:hover{background:var(--mint-d);transform:translateY(-1px)}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);padding:13px 26px;border-radius:var(--r);border:1px solid var(--border);font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:.95rem;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{border-color:var(--purple);color:var(--purple-l)}
+.hero-stats{display:flex;gap:32px;margin-top:40px;padding-top:32px;border-top:1px solid var(--border)}
+.stat-val{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700;color:var(--text)}
+.stat-label{font-size:.78rem;color:var(--muted)}
+
+/* ── TERMINAL ── */
+.terminal{background:#0d0d18;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow);font-family:'JetBrains Mono',monospace}
+.terminal-bar{background:#1a1a2e;padding:12px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.dot-r{width:11px;height:11px;border-radius:50%;background:#f38ba8}
+.dot-y{width:11px;height:11px;border-radius:50%;background:var(--yellow)}
+.dot-g{width:11px;height:11px;border-radius:50%;background:var(--mint)}
+.terminal-title{color:var(--muted);font-size:.73rem;margin-left:8px}
+.terminal-body{padding:20px;font-size:.78rem;line-height:1.85;min-height:280px}
+.t-prompt{color:var(--mint)}.t-cmd{color:var(--text)}.t-flag{color:var(--purple-l)}
+.t-dir{color:var(--yellow)}.t-ok{color:var(--mint)}.t-muted{color:var(--muted)}.t-folder{color:var(--purple-l)}
+.cursor{display:inline-block;width:7px;height:14px;background:var(--mint);animation:blink .8s step-end infinite;vertical-align:text-bottom}
+.t-line{display:block;opacity:0}.t-line.show{opacity:1}
+
+/* ── SECTIONS ── */
+.section{padding:100px 0}
+.alt-bg{background:var(--surface)}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:.73rem;color:var(--mint);letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+.section-title{margin-bottom:16px}
+.section-desc{max-width:560px;font-size:1rem;margin-bottom:0}
+
+/* ── FEATURES ── */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-top:56px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:26px;transition:border-color .2s,transform .2s}
+.feature-card:hover{border-color:rgba(124,111,247,.4);transform:translateY(-3px)}
+.feature-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:14px}
+.feature-card h3{color:var(--text);margin-bottom:7px}
+.feature-card p{font-size:.88rem}
+
+/* ── PARAMS ── */
+.params-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:13px;margin-top:48px}
+.param-chip{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:15px 18px;transition:border-color .2s}
+.param-chip:hover{border-color:var(--purple)}
+.param-name{font-family:'JetBrains Mono',monospace;font-size:.83rem;color:var(--purple-l);display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.param-chip p{font-size:.8rem}
+.param-chip.dashed{border-style:dashed;border-color:rgba(124,111,247,.35)}
+
+/* ── DOWNLOAD ── */
+.download-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;display:grid;grid-template-columns:1fr 1fr}
+.download-info{padding:52px}
+.download-info h2{margin-bottom:14px}
+.download-info>p{margin-bottom:28px;font-size:.97rem}
+.version-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(78,204,163,.1);border:1px solid rgba(78,204,163,.25);color:var(--mint);padding:4px 12px;border-radius:99px;font-size:.78rem;margin-bottom:18px}
+.download-meta{display:flex;gap:18px;margin-top:22px;flex-wrap:wrap}
+.meta-item{font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:5px}
+.meta-item span{color:var(--text)}
+.download-visual{background:linear-gradient(135deg,rgba(124,111,247,.08),rgba(78,204,163,.06));border-left:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.big-icon{font-size:5.5rem;line-height:1;filter:drop-shadow(0 0 40px rgba(124,111,247,.5))}
+.install-box{background:#0d0d18;border:1px solid var(--border);border-radius:var(--r);padding:13px 16px;margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:.78rem;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.install-box code{color:var(--mint);flex:1}
+.copy-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:3px 10px;border-radius:6px;font-size:.72rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.copy-btn:hover{border-color:var(--purple);color:var(--purple-l)}
+
+/* ── PLUGINS ── */
+.plugin-section{padding:100px 0}
+.plugin-layout{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;margin-top:56px}
+.plugin-how h3{color:var(--text);font-size:1rem;margin-bottom:20px}
+.step-list{display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:16px;padding:18px 0;border-bottom:1px solid var(--border);position:relative}
+.step:last-child{border-bottom:none}
+.step-num{width:30px;height:30px;border-radius:50%;background:rgba(124,111,247,.15);border:1px solid rgba(124,111,247,.3);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:.78rem;font-weight:700;color:var(--purple-l);flex-shrink:0;margin-top:2px}
+.step-body h4{color:var(--text);font-size:.9rem;font-weight:500;margin-bottom:4px;font-family:'Space Grotesk',sans-serif}
+.step-body p{font-size:.82rem}
+.code-snippet{background:#0d0d18;border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:20px;font-family:'JetBrains Mono',monospace;font-size:.73rem;line-height:1.75;overflow-x:auto}
+.cs-kw{color:var(--purple-l)} .cs-cls{color:var(--yellow)} .cs-str{color:var(--mint)} .cs-cm{color:var(--muted)} .cs-fn{color:#89b4fa} .cs-arrow{color:var(--muted)}
+
+/* Plugin form */
+.plugin-form-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px;position:sticky;top:90px}
+.plugin-form-wrap h3{color:var(--text);font-size:1rem;margin-bottom:6px}
+.plugin-form-wrap>p{font-size:.85rem;margin-bottom:24px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:6px;font-weight:500;letter-spacing:.03em}
+.form-group label em{color:var(--red);font-style:normal}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;transition:border-color .2s;outline:none}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--purple)}
+.form-textarea{font-family:'JetBrains Mono',monospace;font-size:.78rem;resize:vertical;min-height:130px;line-height:1.6}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237e7e9a' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.char-count{font-size:.7rem;color:var(--muted);text-align:right;margin-top:4px}
+.btn-submit{width:100%;padding:13px;background:var(--purple);color:#fff;border:none;border-radius:var(--r);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-submit:hover{background:var(--purple-l);transform:translateY(-1px)}
+.form-note{font-size:.72rem;color:var(--muted);margin-top:10px;line-height:1.5;text-align:center}
+.form-success{display:none;background:rgba(78,204,163,.08);border:1px solid rgba(78,204,163,.25);border-radius:var(--r);padding:20px;text-align:center}
+.form-success h4{color:var(--mint);font-family:'Space Grotesk',sans-serif;margin-bottom:6px}
+.form-success p{font-size:.85rem}
+
+/* ── FORO ── */
+.forum-section{padding:100px 0}
+.forum-layout{display:grid;grid-template-columns:260px 1fr;gap:28px;margin-top:52px;align-items:start}
+.forum-sidebar{position:sticky;top:90px}
+.forum-cats{display:flex;flex-direction:column;gap:4px;margin-bottom:24px}
+.cat-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r);border:none;background:none;color:var(--muted);font-family:'Inter',sans-serif;font-size:.88rem;cursor:pointer;transition:all .2s;text-align:left;width:100%}
+.cat-btn:hover{background:var(--card);color:var(--text)}
+.cat-btn.active{background:rgba(124,111,247,.12);color:var(--purple-l);border:1px solid rgba(124,111,247,.2)}
+.cat-count{margin-left:auto;background:var(--border);color:var(--muted);font-size:.68rem;padding:2px 7px;border-radius:99px;font-family:'Space Grotesk',sans-serif}
+.cat-btn.active .cat-count{background:rgba(124,111,247,.25);color:var(--purple-l)}
+.forum-stats-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px}
+.forum-stats-box h4{font-family:'Space Grotesk',sans-serif;font-size:.85rem;color:var(--text);margin-bottom:12px}
+.fstat{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:.8rem}
+.fstat:last-child{border-bottom:none;padding-bottom:0}
+.fstat-val{color:var(--mint);font-family:'Space Grotesk',sans-serif;font-weight:700}
+
+.forum-posts{display:flex;flex-direction:column;gap:12px}
+.post-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px 24px;cursor:pointer;transition:border-color .2s,transform .1s}
+.post-card:hover{border-color:rgba(124,111,247,.35);transform:translateY(-1px)}
+.post-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:10px}
+.post-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;font-weight:700;font-family:'Space Grotesk',sans-serif}
+.post-meta{flex:1}
+.post-title{font-family:'Space Grotesk',sans-serif;font-size:.97rem;font-weight:600;color:var(--text);margin-bottom:3px;line-height:1.3}
+.post-info{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.post-tag{padding:2px 9px;border-radius:99px;font-size:.68rem;font-weight:600;font-family:'Space Grotesk',sans-serif}
+.tag-pregunta{background:rgba(124,111,247,.15);color:var(--purple-l)}
+.tag-idea{background:rgba(78,204,163,.12);color:var(--mint)}
+.tag-plugin{background:rgba(249,199,79,.12);color:var(--yellow)}
+.tag-bug{background:rgba(243,139,168,.12);color:var(--red)}
+.tag-anuncio{background:rgba(137,180,250,.12);color:#89b4fa}
+.post-excerpt{font-size:.83rem;color:var(--muted);line-height:1.55;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.post-footer{display:flex;align-items:center;gap:16px;font-size:.75rem;color:var(--muted)}
+.post-stat{display:flex;align-items:center;gap:5px}
+.post-stat svg{opacity:.5}
+.post-solved{margin-left:auto;color:var(--mint);font-size:.72rem;font-weight:600;display:flex;align-items:center;gap:4px}
+.pinned-badge{background:rgba(137,180,250,.1);border:1px solid rgba(137,180,250,.2);color:#89b4fa;font-size:.68rem;padding:2px 8px;border-radius:99px;font-weight:600}
+
+.forum-pagination{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:24px}
+.page-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:.83rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.page-btn:hover{border-color:var(--purple);color:var(--purple-l)}
+.page-btn.current{background:var(--purple);border-color:var(--purple);color:#fff}
+
+/* ── FOOTER ── */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:40px 0}
+.footer-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px}
+.footer-logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.97rem;color:var(--muted);display:flex;align-items:center;gap:8px}
+.footer-logo em{color:var(--purple);font-style:normal}
+.footer-links{display:flex;gap:22px;list-style:none}
+.footer-links a{color:var(--muted);font-size:.83rem;transition:color .2s}
+.footer-links a:hover{color:var(--text)}
+.footer-note{color:var(--muted);font-size:.78rem}
+.footer-wallet{color:var(--muted);font-size:.78rem;margin-top:8px}
+.footer-wallet code{background:rgba(255,255,255,.04);padding:4px 8px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:.76rem;display:inline-block;word-break:break-all}
+
+/* ── UTILS ── */
+.fade-up{animation:fadeUp .6s ease both}
+.d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:none}
+@keyframes blink{50%{opacity:0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+@media(max-width:900px){
+  .forum-layout{grid-template-columns:1fr}
+  .forum-sidebar{position:static}
+  .forum-cats{flex-direction:row;flex-wrap:wrap}
+  .cat-btn{width:auto}
+}
+@media(max-width:768px){
+  nav{padding:14px 20px}.nav-links{display:none}
+  .hero-inner,.download-box,.crypto-grid,.plugin-layout,.uses-list,.form-row{grid-template-columns:1fr}
+  .download-visual{display:none}.download-info{padding:36px 24px}
+  .footer-inner{flex-direction:column;text-align:center}
+  .plugin-form-wrap{position:static}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<!-- ╔══ NAV ══╗ -->
+<nav>
+  <a class="nav-logo" href="#"><em>📂</em> OrganizadorPy</a>
+  <ul class="nav-links">
+    <li><a href="#caracteristicas">Características</a></li>
+    <li><a href="#descarga">Descarga</a></li>
+    <li><a href="#plugins">Plugins</a></li>
+    <li><a href="#foro">Comunidad</a></li>
+  </ul>
+  <a class="nav-cta" href="#descarga">Descargar gratis</a>
+</nav>
+
+<!-- ╔══ HERO ══╗ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-badge fade-up"><span class="dot"></span> Versión 2.0 disponible</div>
+        <h1 class="fade-up d1">Organizá tus archivos<br><span style="color:var(--purple)">con inteligencia.</span><br><span style="color:var(--mint)">Sin esfuerzo.</span></h1>
+        <p class="hero-desc fade-up d2">App Python de escritorio que ordena carpetas caóticas con criterios inteligentes: tipo, propósito, fecha, tamaño y más. Vista previa, undo y plugins.</p>
+        <div class="hero-actions fade-up d3">
+          <a class="btn-primary" href="#descarga">⬇ Descargar — es gratis</a>
+          <a class="btn-secondary" href="#caracteristicas">Cómo funciona</a>
+        </div>
+        <div class="hero-stats fade-up d3">
+          <div><div class="stat-val">9+</div><div class="stat-label">Criterios</div></div>
+          <div><div class="stat-val">0</div><div class="stat-label">Dependencias</div></div>
+          <div><div class="stat-val">∞</div><div class="stat-label">Plugins</div></div>
+        </div>
+      </div>
+      <div class="terminal fade-up d2">
+        <div class="terminal-bar"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div><span class="terminal-title">bash — ~/Descargas</span></div>
+        <div class="terminal-body">
+          <span class="t-line" id="l0"><span class="t-prompt">❯ </span><span class="t-cmd">python cli.py</span> <span class="t-dir">~/Descargas</span> <span class="t-flag">--parametro proposito</span></span><br>
+          <span class="t-line" id="l1"><br></span>
+          <span class="t-line" id="l2"><span class="t-muted">  📋 Vista previa — 11 archivos detectados</span></span><br>
+          <span class="t-line" id="l3"><br></span>
+          <span class="t-line" id="l4"><span class="t-folder">  📁 informes/</span><span class="t-muted">   (3 archivos)</span></span><br>
+          <span class="t-line" id="l5"><span class="t-muted">     └─ reporte_enero.pdf</span></span><br>
+          <span class="t-line" id="l6"><span class="t-muted">     └─ informe_ventas_2024.pdf</span></span><br>
+          <span class="t-line" id="l7"><span class="t-folder">  📁 facturas/</span><span class="t-muted">   (2 archivos)</span></span><br>
+          <span class="t-line" id="l8"><span class="t-folder">  📁 contratos/</span><span class="t-muted">  (1 archivo)</span></span><br>
+          <span class="t-line" id="l9"><span class="t-folder">  📁 imagenes/</span><span class="t-muted">   (3 archivos)</span></span><br>
+          <span class="t-line" id="l10"><span class="t-folder">  📁 codigo/</span><span class="t-muted">     (2 archivos)</span></span><br>
+          <span class="t-line" id="l11"><br></span>
+          <span class="t-line" id="l12"><span class="t-ok">  ✔ 11 archivos → 5 carpetas</span> <span class="t-muted">¿Proceder? [s/N]:</span> <span class="t-cmd">s</span></span><br>
+          <span class="t-line" id="l13"><br></span>
+          <span class="t-line" id="l14"><span class="t-ok">  ✅ ¡Listo! Usá --undo para revertir.</span></span><br>
+          <span class="t-line" id="l15"><br></span>
+          <span class="t-line" id="l16"><span class="t-prompt">❯ </span><span class="cursor"></span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══ CARACTERÍSTICAS ══╗ -->
+<section class="section alt-bg" id="caracteristicas">
+  <div class="container">
+    <p class="section-label reveal">Características</p>
+    <h2 class="section-title reveal">Todo lo que necesitás.<br>Nada que no.</h2>
+    <p class="section-desc reveal">Solo Python 3.10. Cero dependencias externas.</p>
+    <div class="features-grid">
+      <div class="feature-card reveal"><div class="feature-icon" style="background:rgba(124,111,247,.12)">🔍</div><h3>Vista previa (dry-run)</h3><p>Ves exactamente qué va a pasar antes de mover un solo archivo.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon" style="background:rgba(78,204,163,.12)">↩️</div><h3>Deshacer al instante</h3><p><code style="color:var(--purple-l);font-family:'JetBrains Mono'">--undo</code> devuelve todo al estado original.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon" style="background:rgba(249,199,79,.12)">🔌</div><h3>Sistema de plugins</h3><p>Creás un <code style="color:var(--purple-l);font-family:'JetBrains Mono'">.py</code> en plugins/ y el sistema lo detecta automáticamente.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon" style="background:rgba(243,139,168,.12)">🎯</div><h3>Organización por propósito</h3><p>Detecta facturas, contratos e informes leyendo el nombre del archivo.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon" style="background:rgba(124,111,247,.12)">🖥️</div><h3>CLI + GUI incluidas</h3><p>Terminal con colores y barra de progreso, o interfaz visual con tkinter.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon" style="background:rgba(78,204,163,.12)">📋</div><h3>Log automático</h3><p>Cada operación queda registrada con timestamp. Trazabilidad completa.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══ PARÁMETROS ══╗ -->
+<section class="section" id="parametros">
+  <div class="container">
+    <p class="section-label reveal">Criterios de organización</p>
+    <h2 class="section-title reveal">9 maneras de ordenar.<br>Infinitas combinaciones.</h2>
+    <div class="params-grid">
+      <div class="param-chip reveal"><div class="param-name">📦 tipo</div><p>Documentos, imágenes, videos, audio, código, comprimidos…</p></div>
+      <div class="param-chip reveal"><div class="param-name">🎯 proposito</div><p>Informe, factura, contrato, presupuesto detectado en el nombre.</p></div>
+      <div class="param-chip reveal"><div class="param-name">📎 extension</div><p>Por extensión exacta: .pdf, .jpg, .mp4, .xlsx…</p></div>
+      <div class="param-chip reveal"><div class="param-name">📅 año</div><p>Por año de última modificación.</p></div>
+      <div class="param-chip reveal"><div class="param-name">🗓️ año_mes</div><p>Por año y mes: 2024-01, 2024-02…</p></div>
+      <div class="param-chip reveal"><div class="param-name">⚖️ tamaño</div><p>Micro, pequeño, mediano, grande.</p></div>
+      <div class="param-chip reveal"><div class="param-name">🔤 inicial</div><p>Por letra inicial del nombre del archivo.</p></div>
+      <div class="param-chip reveal"><div class="param-name">🗂️ tipo_y_fecha</div><p>Tipo semántico + año (ej: imagenes/2024).</p></div>
+      <div class="param-chip dashed reveal"><div class="param-name">🔌 tu plugin</div><p>Creá tu propio criterio. Se carga automáticamente.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══ DESCARGA ══╗ -->
+<section class="section alt-bg" id="descarga">
+  <div class="container">
+    <div class="download-box reveal">
+      <div class="download-info">
+        <div class="version-badge">✦ Versión 2.0 estable</div>
+        <h2>Descargá y arrancá<br>en 30 segundos.</h2>
+        <p>Sin instaladores, sin pip install, sin registro. Descomprimís el ZIP y ejecutás.</p>
+        <a class="btn-primary" href="Organizador_gui.zip" download>⬇ Descargar Organizador GUI ZIP — gratis</a>
+        <div class="install-box"><code>python cli.py /tu/carpeta --parametro tipo</code><button class="copy-btn" onclick="copyCmd(this)">copiar</button></div>
+        <div class="download-meta">
+          <div class="meta-item">📦 Tamaño: <span>~25 KB</span></div>
+          <div class="meta-item">🐍 Requiere: <span>Python 3.10+</span></div>
+          <div class="meta-item">📄 Licencia: <span>MIT</span></div>
+        </div>
+      </div>
+      <div class="download-visual"><div class="big-icon">📂</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══ PLUGINS ══╗ -->
+<section class="plugin-section" id="plugins">
+  <div class="container">
+    <p class="section-label reveal">Extensibilidad</p>
+    <h2 class="section-title reveal">Propone tu propio plugin.</h2>
+    <p class="section-desc reveal">El sistema de plugins de OrganizadorPy está diseñado para que cualquiera pueda agregar un criterio nuevo. Si tenés una idea o ya escribiste el código, envialo acá.</p>
+
+    <div class="plugin-layout">
+      <!-- Lado izquierdo: cómo funciona -->
+      <div class="plugin-how">
+        <h3>¿Cómo se crea un plugin?</h3>
+        <div class="step-list">
+          <div class="step reveal">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h4>Creá un archivo en plugins/</h4>
+              <p>Cualquier <code style="color:var(--purple-l);font-family:'JetBrains Mono';font-size:.8rem">.py</code> que dejes en la carpeta <code style="color:var(--purple-l);font-family:'JetBrains Mono';font-size:.8rem">plugins/</code> se carga automáticamente al iniciar la app.</p>
+            </div>
+          </div>
+          <div class="step reveal">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h4>Heredá de ParameterBase</h4>
+              <p>Tu clase necesita definir <code style="color:var(--mint);font-family:'JetBrains Mono';font-size:.8rem">nombre</code>, <code style="color:var(--mint);font-family:'JetBrains Mono';font-size:.8rem">descripcion</code> y el método <code style="color:var(--mint);font-family:'JetBrains Mono';font-size:.8rem">classify()</code>.</p>
+            </div>
+          </div>
+          <div class="step reveal">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h4>classify() devuelve el nombre de la carpeta</h4>
+              <p>Recibe un objeto <code style="color:var(--mint);font-family:'JetBrains Mono';font-size:.8rem">FileInfo</code> con nombre, extensión, tamaño, fechas y más.</p>
+            </div>
+          </div>
+          <div class="step reveal">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h4>Aparece en el menú automáticamente</h4>
+              <p>Tanto en el CLI como en la GUI, sin tocar ningún otro archivo.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="code-snippet reveal">
+<span class="cs-cm"># plugins/mi_plugin.py</span>
+<span class="cs-kw">from</span> core <span class="cs-kw">import</span> ParameterBase, FileInfo
+
+<span class="cs-kw">class</span> <span class="cs-cls">MiCriterio</span>(ParameterBase):
+    nombre      = <span class="cs-str">"mi_criterio"</span>
+    descripcion = <span class="cs-str">"Descripción del criterio"</span>
+
+    <span class="cs-kw">def</span> <span class="cs-fn">classify</span>(self, fi: FileInfo) <span class="cs-arrow">-></span> str:
+        <span class="cs-cm"># fi.name, fi.ext, fi.size,</span>
+        <span class="cs-cm"># fi.created, fi.modified, ...</span>
+        <span class="cs-kw">return</span> <span class="cs-str">"nombre_de_carpeta"</span>
+        </div>
+      </div>
+
+      <!-- Lado derecho: formulario -->
+      <div class="plugin-form-wrap reveal">
+        <h3>📬 Enviá tu propuesta</h3>
+        <p>Podés mandar solo la idea o el código completo. Lo revisamos y lo agregamos al proyecto si suma.</p>
+
+        <div id="plugin-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tu nombre <em>*</em></label>
+              <input class="form-input" type="text" id="pf-name" placeholder="ej: Ana García" maxlength="60">
+            </div>
+            <div class="form-group">
+              <label>Email o GitHub</label>
+              <input class="form-input" type="text" id="pf-contact" placeholder="para darte crédito">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Nombre del parámetro <em>*</em></label>
+            <input class="form-input" type="text" id="pf-param" placeholder="ej: por_cliente, por_idioma, por_camara…" maxlength="40">
+          </div>
+
+          <div class="form-group">
+            <label>¿Qué resuelve este plugin? <em>*</em></label>
+            <input class="form-input" type="text" id="pf-desc" placeholder="ej: Organiza fotos por modelo de cámara EXIF" maxlength="120">
+            <div class="char-count" id="pf-desc-count">0 / 120</div>
+          </div>
+
+          <div class="form-group">
+            <label>Tipo de envío</label>
+            <select class="form-select" id="pf-type">
+              <option value="idea">💡 Solo la idea / descripción</option>
+              <option value="pseudocode">📝 Pseudocódigo o lógica</option>
+              <option value="code">🐍 Código Python completo</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Código o descripción detallada <em>*</em></label>
+            <textarea class="form-textarea" id="pf-code" placeholder="Describí la lógica o pegá tu código acá…" maxlength="3000"></textarea>
+            <div class="char-count" id="pf-code-count">0 / 3000</div>
+          </div>
+
+          <button class="btn-submit" onclick="submitPlugin()">
+            🚀 Enviar propuesta
+          </button>
+          <p class="form-note">Las propuestas se envían por email. Tu nombre y crédito quedarán en el changelog si se incluye el plugin.</p>
+        </div>
+
+        <div class="form-success" id="plugin-success">
+          <h4>¡Propuesta recibida! 🎉</h4>
+          <p>Gracias por contribuir. Revisamos tu idea y nos ponemos en contacto si tenemos preguntas.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══ FORO ══╗ -->
+<section class="forum-section alt-bg" id="foro">
+  <div class="container">
+    <p class="section-label reveal">Comunidad</p>
+    <h2 class="section-title reveal">Foro de la comunidad.</h2>
+    <p class="section-desc reveal">Preguntas, ideas, plugins compartidos y novedades del proyecto. Participá abriendo un hilo en GitHub Discussions.</p>
+
+    <div class="forum-layout">
+      <!-- Sidebar -->
+      <div class="forum-sidebar">
+        <div class="forum-cats reveal">
+          <button class="cat-btn active" onclick="filterForum('todos',this)">📋 Todos <span class="cat-count">12</span></button>
+          <button class="cat-btn" onclick="filterForum('pregunta',this)">❓ Preguntas <span class="cat-count">4</span></button>
+          <button class="cat-btn" onclick="filterForum('idea',this)">💡 Ideas <span class="cat-count">3</span></button>
+          <button class="cat-btn" onclick="filterForum('plugin',this)">🔌 Plugins <span class="cat-count">3</span></button>
+          <button class="cat-btn" onclick="filterForum('bug',this)">🐛 Bugs <span class="cat-count">1</span></button>
+          <button class="cat-btn" onclick="filterForum('anuncio',this)">📣 Anuncios <span class="cat-count">1</span></button>
+        </div>
+        <div class="forum-stats-box reveal">
+          <h4>Estadísticas</h4>
+          <div class="fstat"><span>Hilos abiertos</span><span class="fstat-val">12</span></div>
+          <div class="fstat"><span>Respuestas</span><span class="fstat-val">47</span></div>
+          <div class="fstat"><span>Miembros</span><span class="fstat-val">38</span></div>
+          <div class="fstat"><span>Resueltos</span><span class="fstat-val">9</span></div>
+        </div>
+      </div>
+
+      <!-- Posts -->
+      <div>
+        <div class="forum-posts" id="forum-posts">
+          <!-- Los posts se inyectan por JS -->
+        </div>
+        <div class="forum-pagination reveal">
+          <button class="page-btn current">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">›</button>
+        </div>
+        <p style="text-align:center;margin-top:20px;font-size:.83rem" class="reveal">
+          ¿Querés abrir un hilo nuevo? &nbsp;<a href="https://github.com/TU_USUARIO/organizadorpy/discussions/new" target="_blank" style="color:var(--purple-l);border-bottom:1px solid rgba(124,111,247,.3)">Ir a GitHub Discussions →</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ╔══ FOOTER ══╗ -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-logo"><em>📂</em> OrganizadorPy</div>
+      <ul class="footer-links">
+        <li><a href="#caracteristicas">Características</a></li>
+        <li><a href="#descarga">Descargar</a></li>
+        <li><a href="#plugins">Plugins</a></li>
+        <li><a href="#foro">Comunidad</a></li>
+      </ul>
+      <div>
+        <div class="footer-note">Hecho con ☕ · Licencia MIT · Código libre</div>
+        <div class="footer-wallet">USDC (Ethereum): <code>0x98eb99FC58bba3ebAa842ef479eb05E6225b2509</code></div>
+        <div class="footer-wallet">USDC (Polygon): <code>0x98eb99FC58bba3ebAa842ef479eb05E6225b2509</code></div>
+        <div class="footer-wallet">USDC (Solana): <code>kPCoMKV9VGyA1fvvm5KiYoYFjXreWKucH7ayMApj3Xw</code></div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ─── Terminal animada
+const tDelays = [0,800,900,1000,1100,1200,1300,1400,1500,1600,1700,1800,2400,2600,2700,2900,3100];
+document.querySelectorAll('.t-line').forEach((l,i) => {
+  setTimeout(() => l.classList.add('show'), tDelays[i] ?? i*120);
+});
+
+// ─── Scroll reveal
+const obs = new IntersectionObserver(es => {
+  es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+},{threshold:.08});
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// ─── Copiar CLI
+function copyCmd(btn){
+  navigator.clipboard.writeText('python cli.py /tu/carpeta --parametro tipo').then(()=>{
+    btn.textContent='✓ copiado'; setTimeout(()=>btn.textContent='copiar',2000);
+  });
+}
+
+// ─── Plugin form char counters
+function charCounter(inputId,countId,max){
+  const el=document.getElementById(inputId),cnt=document.getElementById(countId);
+  if(!el||!cnt)return;
+  el.addEventListener('input',()=>{ const n=el.value.length; cnt.textContent=`${n} / ${max}`; cnt.style.color=n>max*.9?'var(--red)':'var(--muted)'; });
+}
+charCounter('pf-desc','pf-desc-count',120);
+charCounter('pf-code','pf-code-count',3000);
+
+// ─── Plugin form submit
+// REEMPLAZÁ la URL de mailto con tu email real, o integrá con Formspree/Netlify Forms
+function submitPlugin(){
+  const name=document.getElementById('pf-name').value.trim();
+  const desc=document.getElementById('pf-desc').value.trim();
+  const code=document.getElementById('pf-code').value.trim();
+  const param=document.getElementById('pf-param').value.trim();
+  if(!name||!desc||!code||!param){
+    alert('Por favor completá los campos obligatorios (*).');return;
+  }
+  const type=document.getElementById('pf-type').value;
+  const contact=document.getElementById('pf-contact').value.trim();
+  const subject=encodeURIComponent(`[OrganizadorPy Plugin] ${param} — de ${name}`);
+  const body=encodeURIComponent(
+    `Nombre: ${name}\nContacto: ${contact||'no indicado'}\nTipo: ${type}\nParámetro: ${param}\n\nDescripción:\n${desc}\n\nCódigo/Lógica:\n${code}`
+  );
+  // ── Opción A: mailto (más simple, abre el cliente de email)
+  window.location.href=`mailto:TU_EMAIL@dominio.com?subject=${subject}&body=${body}`;
+  // ── Opción B: Formspree (descomentar y reemplazar TU_ID con el de tu cuenta formspree.io):
+  // fetch('https://formspree.io/f/TU_ID',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,contact,param,type,desc,code})})
+  //   .then(()=>{ document.getElementById('plugin-form').style.display='none'; document.getElementById('plugin-success').style.display='block'; });
+
+  // Mostrar éxito (para el caso mailto, mostramos el mensaje igualmente)
+  setTimeout(()=>{
+    document.getElementById('plugin-form').style.display='none';
+    document.getElementById('plugin-success').style.display='block';
+  },600);
+}
+
+// ─── FORO — posts hardcodeados
+// Editá este array para agregar, quitar o modificar posts
+const POSTS = [
+  { id:1, tag:'anuncio', title:'🎉 OrganizadorPy v2.0 — plugins, GUI y undo', author:'dev', color:'#7c6ff7', excerpt:'Lanzamos la versión 2.0 con sistema de plugins automático, interfaz gráfica en tkinter, modo dry-run, detección de duplicados por MD5 y el comando --undo para revertir cualquier operación.', replies:8, views:124, time:'hace 2 días', solved:false, pinned:true },
+  { id:2, tag:'pregunta', title:'¿Cómo organizo por cliente Y por fecha al mismo tiempo?', author:'marta_g', color:'#a89ef9', excerpt:'Quiero crear subcarpetas como cliente_acme/2024-01. Vi el plugin de ejemplo pero no sé cómo combinar dos criterios en un mismo classify().', replies:5, views:67, time:'hace 3 días', solved:true },
+  { id:3, tag:'plugin', title:'Plugin para organizar fotos por modelo de cámara (EXIF)', author:'foto_dev', color:'#f9c74f', excerpt:'Comparto un plugin que lee los metadatos EXIF de imágenes .jpg y .heic, extrae el modelo de cámara (iPhone 14, Sony A7, etc.) y organiza en carpetas por dispositivo.', replies:12, views:98, time:'hace 5 días', solved:false },
+  { id:4, tag:'idea', title:'Sugerencia: parámetro por idioma del documento', author:'carlos_m', color:'#4ecca3', excerpt:'Sería útil detectar el idioma del texto en PDFs y .txt usando langdetect y organizar en carpetas como español/, inglés/, portugués/. ¿Alguien lo intentó?', replies:3, views:41, time:'hace 6 días', solved:false },
+  { id:5, tag:'pregunta', title:'El GUI no arranca en macOS 13, pantalla en blanco', author:'lucia_p', color:'#f38ba8', excerpt:'Al correr python gui.py en macOS Ventura la ventana aparece pero está completamente en blanco. En Windows funciona perfecto. ¿Alguien tuvo el mismo problema?', replies:4, views:55, time:'hace 1 semana', solved:true },
+  { id:6, tag:'plugin', title:'Plugin por resolución de imagen (HD, 4K, thumbnail)', author:'pixel_co', color:'#89b4fa', excerpt:'Uso Pillow para leer el tamaño en píxeles de las imágenes y las ordeno en: thumbnails/ (< 800px), hd/ (1080-4K) y ultra/ (4K+). Comparto el código acá.', replies:7, views:83, time:'hace 1 semana', solved:false },
+  { id:7, tag:'idea', title:'Modo "watch": que la app monitoree una carpeta en tiempo real', author:'auto_fan', color:'#cba6f7', excerpt:'Sería buenísimo un modo --watch que use watchdog para escuchar cambios en una carpeta y organice automáticamente los archivos nuevos que entren.', replies:6, views:72, time:'hace 10 días', solved:false },
+  { id:8, tag:'pregunta', title:'¿Puedo usar --undo después de cerrar la app?', author:'nueva_user', color:'#a6e3a1', excerpt:'Corrí python cli.py --parametro tipo, cerré la terminal y ahora necesito deshacer. ¿El historial de acciones se guarda en algún archivo o solo dura la sesión?', replies:2, views:38, time:'hace 11 días', solved:true },
+  { id:9, tag:'plugin', title:'Plugin para organizar por dominio del remitente en .eml', author:'mail_dev', color:'#f9e2af', excerpt:'Lee archivos .eml (emails exportados) y extrae el dominio del campo From. Organiza en carpetas como gmail.com/, empresa.com/, etc. Muy útil para archivar correos.', replies:9, views:61, time:'hace 2 semanas', solved:false },
+  { id:10, tag:'bug', title:'Con nombres de archivo que tienen emoji se rompe el log', author:'emoji_usr', color:'#f38ba8', excerpt:'Si el archivo se llama "foto 🌄 verano.jpg" el logger lanza UnicodeEncodeError en Windows. En Linux funciona bien. Adjunto el traceback completo.', replies:3, views:44, time:'hace 2 semanas', solved:false },
+  { id:11, tag:'idea', title:'Panel web para ver el log de operaciones en el browser', author:'webdev_ar', color:'#7c6ff7', excerpt:'¿Qué piensan de agregar un --serve que levante un servidor HTTP minimalista con FastAPI y muestre el log.txt formateado en una página simple?', replies:5, views:57, time:'hace 3 semanas', solved:false },
+  { id:12, tag:'pregunta', title:'¿Funciona con rutas de red (//servidor/carpeta)?', author:'sysadm_x', color:'#94e2d5', excerpt:'Quiero usarlo en una empresa para organizar un servidor NAS accesible por SMB. Las rutas son del tipo //192.168.1.10/docs. ¿El motor maneja eso correctamente?', replies:1, views:29, time:'hace 3 semanas', solved:false },
+];
+
+const TAG_LABELS = { pregunta:'❓ Pregunta', idea:'💡 Idea', plugin:'🔌 Plugin', bug:'🐛 Bug', anuncio:'📣 Anuncio' };
+const TAG_CLASSES = { pregunta:'tag-pregunta', idea:'tag-idea', plugin:'tag-plugin', bug:'tag-bug', anuncio:'tag-anuncio' };
+
+let activeFilter='todos';
+
+function renderPosts(filter){
+  const container=document.getElementById('forum-posts');
+  const visible=filter==='todos'?POSTS:POSTS.filter(p=>p.tag===filter);
+  container.innerHTML=visible.map(p=>`
+    <div class="post-card reveal" data-tag="${p.tag}">
+      <div class="post-header">
+        <div class="post-avatar" style="background:${p.color}22;color:${p.color}">${p.author[0].toUpperCase()}</div>
+        <div class="post-meta">
+          <div class="post-title">
+            ${p.pinned?'<span class="pinned-badge">📌 fijado</span> ':''}
+            ${p.title}
+          </div>
+          <div class="post-info">
+            <span class="post-tag ${TAG_CLASSES[p.tag]}">${TAG_LABELS[p.tag]}</span>
+            <span>por <strong style="color:var(--text)">${p.author}</strong></span>
+            <span>${p.time}</span>
+          </div>
+        </div>
+      </div>
+      <div class="post-excerpt">${p.excerpt}</div>
+      <div class="post-footer">
+        <span class="post-stat">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          ${p.replies} respuestas
+        </span>
+        <span class="post-stat">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          ${p.views} vistas
+        </span>
+        ${p.solved?'<span class="post-solved">✓ resuelto</span>':''}
+      </div>
+    </div>
+  `).join('');
+  // Re-observar para reveal
+  container.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+}
+
+function filterForum(cat,btn){
+  activeFilter=cat;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPosts(cat);
+}
+
+renderPosts('todos');
+</script>
+</body>
+</html>
